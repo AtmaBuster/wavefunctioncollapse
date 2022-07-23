@@ -77,6 +77,7 @@ def add_rule(tmap, ruls, x, y, direc):
 
 def make_ruleset(tilemaps):
 	lins = []
+	lins.append('whitelist')
 	cts = {}
 	rules = {}
 	for i,tmap in enumerate(tilemaps):
