@@ -1,5 +1,5 @@
 from PIL import Image
-import sys
+import argparse
 
 def cmpim(im1, im2):
 	# check hash, if different, not same
@@ -77,11 +77,9 @@ def add_rule(tmap, ruls, x, y, direc):
 
 def make_ruleset(tilemaps):
 	lins = []
-	lins.append('whitelist')
 	cts = {}
 	rules = {}
 	for i,tmap in enumerate(tilemaps):
-		print('getting rules for tilemap {}...'.format(i))
 		maph = len(tmap)
 		mapw = len(tmap[0])
 		chkin = lambda x,y: ((x>=0)&(y>=0)&(x<mapw)&(y<maph))
@@ -135,32 +133,34 @@ def make_tileset(lst):
 			im.paste(lst[tili][0], (x * tilw, y * tilh))
 	return im
 
-if __name__ == '__main__':
-	if len(sys.argv) < 5:
-		print('usage: python {} outfiles tilewidth tileheight imgin...'.format(sys.argv[0]))
-		exit()
-	# get arguments
-	img_fil_list = sys.argv[4:]
-	tw = int(sys.argv[2])
-	th = int(sys.argv[3])
-
+def main(args):
 	tilemaps = []
 	tilelist = []
-	for img_fn in img_fil_list:
-		print('processing image "{}"...'.format(img_fn))
+	for img_fn in args.imgin:
+		if args.verbose: print('processing image "{}"...'.format(img_fn))
 		img_in = Image.open(img_fn)
 		# get current map tiles
-		cur_tils = image_to_tiles(img_in, tw, th)
+		cur_tils = image_to_tiles(img_in, args.tilewidth, args.tileheight)
 		# add to list and strip duplicates
 		tilelist += cur_tils
 		tilelist = get_unique_tiles(tilelist)
 		# turn current map into tilemap
 		tilemaps.append(make_tilemap(img_in, tilelist))
 	# make rules based off of tilemaps
-	print('making rules...')
+	if args.verbose: print('making rules...')
 	rules = make_ruleset(tilemaps)
-	open(sys.argv[1] + '.txt', 'w').write(rules)
+	open(args.outfiles + '.txt', 'w').write(rules)
 	# make tileset image
-	print('making tileset image...')
+	if args.verbose: print('making tileset image...')
 	img_out = make_tileset(tilelist)
-	img_out.save(sys.argv[1] + '.png')
+	img_out.save(args.outfiles + '.png')
+
+if __name__ == '__main__':
+	parser = argparse.ArgumentParser(description='Make ruleset and unique tile list from map')
+	parser.add_argument('outfiles', type=str, help='files to output (appends .txt and .png)')
+	parser.add_argument('tilewidth', type=int, help='width of each tile')
+	parser.add_argument('tileheight', type=int, help='height of each tile')
+	parser.add_argument('-v', '--verbose', action='store_true', help='show progress output')
+	parser.add_argument('imgin', type=str, nargs='+', help='map images to process')
+	args = parser.parse_args()
+	main(args)
